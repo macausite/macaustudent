@@ -1348,17 +1348,19 @@ function App() {
                         />
                         💼 教育導師
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-main)' }}>
-                        <input 
-                          type="radio" 
-                          name="authRole" 
-                          value="admin" 
-                          checked={authRole === 'admin'} 
-                          onChange={() => setAuthRole('admin')}
-                          style={{ width: 'auto', height: 'auto', margin: 0, padding: 0, accentColor: 'var(--primary)' }}
-                        />
-                        👑 系統管理員
-                      </label>
+                      {import.meta.env.DEV && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                          <input 
+                            type="radio" 
+                            name="authRole" 
+                            value="admin" 
+                            checked={authRole === 'admin'} 
+                            onChange={() => setAuthRole('admin')}
+                            style={{ width: 'auto', height: 'auto', margin: 0, padding: 0, accentColor: 'var(--primary)' }}
+                          />
+                          👑 系統管理員
+                        </label>
+                      )}
                     </div>
                   </div>
                 </>
@@ -1391,17 +1393,19 @@ function App() {
               </button>
             </form>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-              <button type="button" onClick={() => handleGuestLogin('student')} className="btn-auth-guest" style={{ flex: '1 1 30%', padding: '0.5rem 0', fontSize: '0.8rem' }}>
-                🎓 學生訪客
-              </button>
-              <button type="button" onClick={() => handleGuestLogin('tutor')} className="btn-auth-guest" style={{ flex: '1 1 30%', padding: '0.5rem 0', fontSize: '0.8rem' }}>
-                💼 導師訪客
-              </button>
-              <button type="button" onClick={() => handleGuestLogin('admin')} className="btn-auth-guest" style={{ flex: '1 1 30%', padding: '0.5rem 0', fontSize: '0.8rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
-                👑 管理員訪客
-              </button>
-            </div>
+            {import.meta.env.DEV && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => handleGuestLogin('student')} className="btn-auth-guest" style={{ flex: '1 1 30%', padding: '0.5rem 0', fontSize: '0.8rem' }}>
+                  🎓 學生訪客
+                </button>
+                <button type="button" onClick={() => handleGuestLogin('tutor')} className="btn-auth-guest" style={{ flex: '1 1 30%', padding: '0.5rem 0', fontSize: '0.8rem' }}>
+                  💼 導師訪客
+                </button>
+                <button type="button" onClick={() => handleGuestLogin('admin')} className="btn-auth-guest" style={{ flex: '1 1 30%', padding: '0.5rem 0', fontSize: '0.8rem', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
+                  👑 管理員訪客
+                </button>
+              </div>
+            )}
 
             <div className="auth-toggle-text" style={{ marginTop: '1rem' }}>
               {authMode === 'signin' ? (

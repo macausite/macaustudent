@@ -1489,7 +1489,7 @@ function App() {
         <p>{t.heroSubtitle}</p>
 
         {/* Student View tabs */}
-        {userRole === 'student' && (
+        {userRole === 'student' && activeTab !== 'about' && activeTab !== 'policy' && (
           <div className="dashboard-controls">
             <button onClick={() => handleStudentTabSwitch('all')} className={`filter-btn ${activeTab === 'all' ? 'active' : ''}`}>{t.allStudentHub}</button>
             <button onClick={() => handleStudentTabSwitch('tutors')} className={`filter-btn ${activeTab === 'tutors' ? 'active' : ''}`}>{t.browseTutors}</button>
@@ -1503,7 +1503,7 @@ function App() {
         )}
 
         {/* Tutor View tabs */}
-        {userRole === 'tutor' && (
+        {userRole === 'tutor' && activeTab !== 'about' && activeTab !== 'policy' && (
           <div className="dashboard-controls">
             <button onClick={() => setActiveTab('tutor-profile')} className={`filter-btn ${activeTab === 'tutor-profile' ? 'active' : ''}`}>💼 我的教學檔案</button>
             <button onClick={() => setActiveTab('tutor-bookings')} className={`filter-btn ${activeTab === 'tutor-bookings' ? 'active' : ''}`}>📅 收到的預約申請 ({tutorReceivedBookings.length})</button>
@@ -1512,7 +1512,7 @@ function App() {
         )}
 
         {/* Admin View tabs */}
-        {userRole === 'admin' && (
+        {userRole === 'admin' && activeTab !== 'about' && activeTab !== 'policy' && (
           <div className="dashboard-controls">
             <button onClick={() => setActiveTab('admin-overview')} className={`filter-btn ${activeTab === 'admin-overview' ? 'active' : ''}`}>📊 平台總覽與設定</button>
             <button onClick={() => setActiveTab('admin-tutors')} className={`filter-btn ${activeTab === 'admin-tutors' ? 'active' : ''}`}>👥 Tutors 導師管理 ({tutors.length})</button>
@@ -1524,8 +1524,51 @@ function App() {
 
       {/* Main Dashboard Panel */}
       <main className="dashboard-main">
+        {activeTab === 'about' && (
+          <div className="card" style={{ padding: '2rem', maxWidth: '800px', margin: '1rem auto 3rem auto', width: '100%', boxSizing: 'border-box' }}>
+            <h2 style={{ color: 'var(--primary)', marginBottom: '1.5rem', borderBottom: '2px solid var(--secondary)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🎓 關於我們 (About Us)
+            </h2>
+            <p style={{ lineHeight: '1.8', marginBottom: '1.2rem', color: 'var(--text-main)' }}>
+              歡迎來到<strong>「澳門學生網」 (Macau Student Hub)</strong>！我們是澳門本土領先的家教與學生對接平台，致力於為全澳中小學生、家長以及優秀教育導師提供一個安全、高效、透明的媒合環境。
+            </p>
+            <p style={{ lineHeight: '1.8', marginBottom: '1.2rem', color: 'var(--text-main)' }}>
+              不論您是正在尋找四校聯考輔導、國際學制（IB/IGCSE/A-Level）對接、還是外語學習（英語、葡萄牙語）的學生，或是具備專業教學資歷的導師，澳門學生網都能為您提供最優質的媒合對接服務。
+            </p>
+            <h3 style={{ color: 'var(--primary)', marginTop: '1.5rem', marginBottom: '1rem' }}>我們的願景</h3>
+            <p style={{ lineHeight: '1.8', marginBottom: '1.2rem', color: 'var(--text-main)' }}>
+              推動澳門本地教育資源的優化配置，利用安全可靠的雲端認證技術，打破傳統家教中介資訊不透明的壁壘，讓教育回歸本質。
+            </p>
+            <button className="btn-book" style={{ marginTop: '1.5rem' }} onClick={() => setActiveTab('all')}>返回首頁</button>
+          </div>
+        )}
+
+        {activeTab === 'policy' && (
+          <div className="card" style={{ padding: '2rem', maxWidth: '800px', margin: '1rem auto 3rem auto', width: '100%', boxSizing: 'border-box' }}>
+            <h2 style={{ color: 'var(--primary)', marginBottom: '1.5rem', borderBottom: '2px solid var(--secondary)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              📜 服務條款與隱私政策 (Terms & Policy)
+            </h2>
+            
+            <h3 style={{ color: 'var(--primary)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>1. 服務條款</h3>
+            <p style={{ lineHeight: '1.8', marginBottom: '1.2rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>
+              本平台僅提供學生與導師之間的資訊媒合服務。用戶在註冊與使用平台時，應提供真實且準確的個人資訊。所有教學預約與費用支付均由雙方直接協議進行，平台不承擔任何直接教學糾紛的法律責任。
+            </p>
+
+            <h3 style={{ color: 'var(--primary)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>2. 隱私政策與數據保護</h3>
+            <p style={{ lineHeight: '1.8', marginBottom: '1.2rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>
+              我們高度重視您的隱私。您註冊時輸入的電子郵件、稱呼及教學檔案資料僅用於平台的對接匹配與身份核准。本平台使用安全可靠的 Firebase 認證技術，承諾不會將您的個人隱私數據洩露或銷售給任何第三方。
+            </p>
+
+            <h3 style={{ color: 'var(--primary)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>3. 平台媒合收費規則</h3>
+            <p style={{ lineHeight: '1.8', marginBottom: '1.2rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>
+              本平台採用公開、合理的收費機制。詳細學生收費說明及導師課酬支付指南請參閱平台對應門戶的說明頁面。
+            </p>
+            <button className="btn-book" style={{ marginTop: '1.5rem' }} onClick={() => setActiveTab('all')}>返回首頁</button>
+          </div>
+        )}
+
         {/* ================= STUDENT VIEW (PUBLIC EXPLORER) ================= */}
-        {userRole === 'student' && (
+        {userRole === 'student' && activeTab !== 'about' && activeTab !== 'policy' && (
           <>
             {/* Tutor Explorer list (PUBLICLY ACCESSIBLE) */}
             {(activeTab === 'all' || activeTab === 'tutors') && (
@@ -1685,6 +1728,16 @@ function App() {
                   <h2>{t.bookingsTitle}</h2>
                   <p>{t.bookingsSubtitle}</p>
                 </div>
+
+                <div style={{ backgroundColor: 'rgba(238, 204, 136, 0.15)', borderLeft: '4px solid var(--accent)', padding: '1.2rem 1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
+                  <h4 style={{ color: 'var(--primary)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+                    💰 我們如何收費 (How We Charge)
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
+                    <strong>收費標準</strong>：本平台向學生/家長收取一次性家教對接服務費（媒合佣金），佣金金額為該導師<strong>兩週的授課薪酬</strong>（即前兩週的約定學費作為平台服務費，家長及學生無須額外支付其他平台服務費）。<br />
+                    <strong>繳費方式</strong>：您的預約申請經導師核准接受後，平台客服人員將會與您取得聯絡，指引您通過澳門本地銀行轉帳或 MPay 支付媒合費。完成支付後，課程將正式開展並獲得平台全程對接保障。
+                  </p>
+                </div>
                 
                 {studentBookings.length === 0 ? (
                   <div className="empty-state">目前沒有您的預約記錄</div>
@@ -1818,7 +1871,7 @@ function App() {
         )}
 
         {/* ================= TUTOR PORTAL VIEW (SECURE PORTAL) ================= */}
-        {userRole === 'tutor' && currentUser && (
+        {userRole === 'tutor' && currentUser && activeTab !== 'about' && activeTab !== 'policy' && (
           <div className="notes-container" style={{ gridTemplateColumns: '1fr', gap: '0' }}>
             
             {/* Tab 1: Onboarding form / Teaching Profile */}
@@ -2038,6 +2091,16 @@ function App() {
                   <p>{t.bookingReceivedSubtitle}</p>
                 </div>
 
+                <div style={{ backgroundColor: 'rgba(238, 204, 136, 0.15)', borderLeft: '4px solid var(--accent)', padding: '1.2rem 1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
+                  <h4 style={{ color: 'var(--primary)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+                    💰 課酬收款與平台佣金說明 (How You Get Paid)
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
+                    <strong>課酬發放</strong>：所有課酬由家長直接與您約定並直接支付給您（例如每週或每月結束時通過現金、本地銀行轉帳或 MPay 支付）。本平台不經手、亦不代扣您的日常課酬。<br />
+                    <strong>平台對接佣金</strong>：當您確認接受學生的課程預約後，需向平台支付一次性的媒合服務費（金額等同於該預約項目首兩週的課酬時薪價值）。平台客服將聯繫您辦理轉帳，佣金確認後該預約即受平台正式保障。
+                  </p>
+                </div>
+
                 {tutorReceivedBookings.length === 0 ? (
                   <div className="empty-state">
                     {t.noReceivedBookings}
@@ -2113,7 +2176,7 @@ function App() {
         )}
 
         {/* ================= ADMIN PORTAL VIEW (SECURE PORTAL) ================= */}
-        {userRole === 'admin' && currentUser && (
+        {userRole === 'admin' && currentUser && activeTab !== 'about' && activeTab !== 'policy' && (
           <div className="admin-portal-container" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', width: '100%' }}>
             
             {/* Overview & Settings Tab */}
@@ -2674,8 +2737,13 @@ function App() {
       )}
 
       {/* Footer */}
-      <footer className="footer">
+      <footer className="footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '2rem 1rem' }}>
         <p>{t.copyright}</p>
+        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem' }}>
+          <button onClick={() => setActiveTab('about')} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>關於我們</button>
+          <span>|</span>
+          <button onClick={() => setActiveTab('policy')} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>服務條款與隱私政策</button>
+        </div>
       </footer>
     </div>
   );

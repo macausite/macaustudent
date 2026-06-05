@@ -1,0 +1,24 @@
+{
+  "name": "macaustudent-backend-functions",
+  "description": "Cloud Functions for Firebase - REST API for Macau Student Hub",
+  "scripts": {
+    "serve": "npx -y firebase-tools@latest emulators:start --only functions",
+    "shell": "npx -y firebase-tools@latest functions:shell",
+    "start": "npm run serve",
+    "deploy": "npx -y firebase-tools@latest deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0",
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}

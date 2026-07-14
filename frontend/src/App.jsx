@@ -1597,7 +1597,9 @@ function App() {
       {/* Header (Language switchers removed, exclusive Traditional Chinese) */}
       <header className="navbar">
         <div className="logo" style={{ cursor: 'pointer' }} onClick={() => handleStudentTabSwitch('all')}>
-          <div className="logo-icon">🎓</div>
+          <div className="logo-icon" style={{ background: 'none', borderRadius: 0, width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/student-icon.svg" alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
           <span>{t.brandName}</span>
         </div>
 

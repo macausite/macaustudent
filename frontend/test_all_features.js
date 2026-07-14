@@ -100,13 +100,14 @@ async function fillInput(page, selector, text) {
     }
 
     // Verify navbar logo text and icon
+    const logoImgExists = await page.evaluate(() => !!document.querySelector('.logo img[src="/student-icon.svg"]'));
     const navbarBrand = await page.evaluate(() => {
       const brand = document.querySelector('.logo');
       return brand ? brand.textContent.trim() : null;
     });
-    console.log(`Navbar Brand: "${navbarBrand}"`);
-    if (!navbarBrand || !navbarBrand.includes('澳門學生網') || !navbarBrand.includes('🎓')) {
-      throw new Error(`Navbar Brand expected to contain '澳門學生網' and '🎓', but got: "${navbarBrand}"`);
+    console.log(`Navbar Brand: "${navbarBrand}", logo img exists: ${logoImgExists}`);
+    if (!navbarBrand || !navbarBrand.includes('澳門學生網') || !logoImgExists) {
+      throw new Error(`Navbar Brand expected to contain '澳門學生網' and logo image, but got: "${navbarBrand}" with logoImgExists: ${logoImgExists}`);
     }
 
     // Take screenshot of default landing page

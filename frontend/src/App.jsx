@@ -263,6 +263,16 @@ function App() {
   const [globalCommission, setGlobalCommission] = useState(() => Number(localStorage.getItem('globalCommission')) || 2);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [googleTrackingScript, setGoogleTrackingScript] = useState(() => localStorage.getItem('googleTrackingScript') || '');
+  const [smsVerificationEnabled, setSmsVerificationEnabled] = useState(() => localStorage.getItem('smsVerificationEnabled') === 'true');
+
+  // Auth Form SMS verification states
+  const [authPhone, setAuthPhone] = useState('');
+  const [authOtpCode, setAuthOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpVerificationMessage, setOtpVerificationMessage] = useState('');
 
   // Admin Editing Modal states
   const [adminEditModalOpen, setAdminEditModalOpen] = useState(false);
@@ -333,6 +343,16 @@ function App() {
       console.error("Failed to inject Google tracking script:", e);
     }
   };
+
+  // Reset OTP states when modal opens/closes or toggles signin/signup
+  useEffect(() => {
+    setAuthPhone('');
+    setAuthOtpCode('');
+    setOtpSent(false);
+    setOtpVerified(false);
+    setOtpError('');
+    setOtpVerificationMessage('');
+  }, [loginModalOpen, authMode]);
 
   // Run Google Tracking Script on load
   useEffect(() => {
@@ -480,6 +500,13 @@ function App() {
     setAuthError('');
     if (!authEmail || !authPassword) return;
 
+    if (authMode === 'signup' && smsVerificationEnabled) {
+      if (!otpVerified) {
+        setAuthError("請先完成簡訊驗證碼驗證");
+        return;
+      }
+    }
+
     try {
       if (authMode === 'signup') {
         const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
@@ -538,6 +565,70 @@ function App() {
       }
     } catch (err) {
       setAuthError("Failed to initiate guest account: " + err.message);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    setOtpError('');
+    setOtpVerificationMessage('');
+    if (!authPhone || authPhone.length !== 8) {
+      setOtpError("請輸入正確的 8 位數澳門手機號碼");
+      return;
+    }
+    
+    setIsSendingOtp(true);
+    try {
+      const fullPhone = "+853" + authPhone;
+      const res = await fetch(`${API_URL}/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: fullPhone })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOtpSent(true);
+        setOtpVerificationMessage("已發送驗證碼，請檢查您的手機簡訊。");
+        // Log dev code to console for automation tests
+        if (data.devCode) {
+          console.log("DEV Verification Code:", data.devCode);
+          window.devOtpCode = data.devCode;
+        }
+      } else {
+        setOtpError(data.error || "發送失敗，請重試");
+      }
+    } catch (err) {
+      console.error(err);
+      setOtpError("網絡錯誤，無法發送簡訊");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setOtpError('');
+    setOtpVerificationMessage('');
+    if (!authOtpCode || authOtpCode.length !== 6) {
+      setOtpError("請輸入 6 位數簡訊驗證碼");
+      return;
+    }
+
+    try {
+      const fullPhone = "+853" + authPhone;
+      const res = await fetch(`${API_URL}/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: fullPhone, otpCode: authOtpCode })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOtpVerified(true);
+        setOtpVerificationMessage("✓ 手機號碼驗證成功！");
+      } else {
+        setOtpError(data.error || "驗證碼錯誤，請重新輸入");
+      }
+    } catch (err) {
+      console.error(err);
+      setOtpError("網絡錯誤，無法進行驗證");
     }
   };
 
@@ -998,6 +1089,7 @@ function App() {
     localStorage.setItem('globalAnnouncement', globalAnnouncement);
     localStorage.setItem('globalCommission', globalCommission.toString());
     localStorage.setItem('googleTrackingScript', googleTrackingScript);
+    localStorage.setItem('smsVerificationEnabled', smsVerificationEnabled.toString());
     injectGoogleTrackingScript(googleTrackingScript);
     setShowAnnouncement(true);
     triggerToast("已成功更新並儲存平台全局設定及追蹤腳本！");
@@ -1388,7 +1480,85 @@ function App() {
                 />
               </div>
 
-              <button type="submit" className="btn-auth-submit">
+              {authMode === 'signup' && smsVerificationEnabled && (
+                <>
+                  <div className="auth-input-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <label>手機號碼 (Macau +853)</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <span style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>+853</span>
+                      <input 
+                        type="tel" 
+                        id="authPhoneInput"
+                        placeholder="例如: 66123456" 
+                        value={authPhone}
+                        onChange={(e) => setAuthPhone(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                        style={{ flex: 1 }}
+                        required
+                        disabled={otpVerified}
+                      />
+                      <button 
+                        type="button" 
+                        id="sendOtpBtn"
+                        onClick={handleSendOtp} 
+                        className="btn-book" 
+                        style={{ padding: '0 1rem', fontSize: '0.85rem', margin: 0, minWidth: '90px' }}
+                        disabled={otpVerified || isSendingOtp || authPhone.length !== 8}
+                      >
+                        {isSendingOtp ? "發送中..." : otpSent ? "重新發送" : "發送驗證碼"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {otpSent && (
+                    <div className="auth-input-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      <label>簡訊驗證碼 (6位數)</label>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          id="authOtpInput"
+                          placeholder="請輸入 6 位數驗證碼" 
+                          value={authOtpCode}
+                          onChange={(e) => setAuthOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          style={{ flex: 1 }}
+                          required
+                          disabled={otpVerified}
+                        />
+                        <button 
+                          type="button" 
+                          id="verifyOtpBtn"
+                          onClick={handleVerifyOtp} 
+                          className="btn-book" 
+                          style={{ padding: '0 1rem', fontSize: '0.85rem', margin: 0, minWidth: '90px', backgroundColor: 'var(--secondary)', borderColor: 'var(--secondary)' }}
+                          disabled={otpVerified || authOtpCode.length !== 6}
+                        >
+                          驗證驗證碼
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {otpVerificationMessage && (
+                    <div style={{ fontSize: '0.8rem', color: otpVerified ? 'var(--secondary)' : 'var(--text-main)', marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+                      {otpVerificationMessage}
+                    </div>
+                  )}
+
+                  {otpError && (
+                    <div style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+                      {otpError}
+                    </div>
+                  )}
+                </>
+              )}
+
+              <button 
+                type="submit" 
+                className="btn-auth-submit"
+                style={{
+                  opacity: (authMode === 'signup' && smsVerificationEnabled && !otpVerified) ? 0.6 : 1,
+                  cursor: (authMode === 'signup' && smsVerificationEnabled && !otpVerified) ? 'not-allowed' : 'pointer'
+                }}
+              >
                 {authMode === 'signin' ? t.btnSignIn : t.btnSignUp}
               </button>
             </form>
@@ -2345,6 +2515,31 @@ function App() {
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           在儲存後，平台將動態解析並注入此腳本至網頁頂端 Head 節點中，無須重新編譯。
                         </span>
+                      </div>
+
+                      {/* SMS Verification setting */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', gridColumn: '1 / -1', marginTop: '1rem', padding: '0.75rem 1rem', backgroundColor: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                        <input
+                          id="smsVerificationToggle"
+                          type="checkbox"
+                          checked={smsVerificationEnabled}
+                          onChange={(e) => setSmsVerificationEnabled(e.target.checked)}
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            accentColor: 'var(--primary)',
+                            margin: 0
+                          }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                          <label htmlFor="smsVerificationToggle" style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-main)', cursor: 'pointer' }}>
+                            啟用註冊手機簡訊驗證 (CTM SMS Verification)
+                          </label>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            開啟後，新用戶註冊（學生或導師）時必須通過 8 位數澳門手機號碼的簡訊驗證碼驗證（當前使用 CTM SMS 模擬對接）。
+                          </span>
+                        </div>
                       </div>
 
                     </div>

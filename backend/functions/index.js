@@ -340,6 +340,77 @@ app.put("/requests/:id", (req, res) => {
   res.json(matchRequests[index]);
 });
 
+let otpStore = {};
+
+// Mock CTM SMS sender
+async function sendCTMSMS(phoneNumber, message) {
+  console.log(`[CTM SMS Service] Sending to ${phoneNumber}: "${message}"`);
+  
+  // Example CTM API integration (User can uncomment and configure)
+  /*
+  const username = process.env.CTM_SMS_USERNAME;
+  const password = process.env.CTM_SMS_PASSWORD;
+  const url = `https://sms.ctm.net/cgi-bin/sms_send?username=${username}&password=${password}&to=${phoneNumber}&message=${encodeURIComponent(message)}`;
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+    console.log(`[CTM SMS Service] Response: ${text}`);
+  } catch (err) {
+    console.error(`[CTM SMS Service] Error:`, err);
+  }
+  */
+  return true;
+}
+
+app.post("/send-otp", async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ error: "Missing phone number" });
+  }
+  
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  otpStore[phoneNumber] = {
+    code: otpCode,
+    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+  };
+  
+  const message = `【澳門學生網】您的驗證碼是 ${otpCode}，請於5分鐘內輸入。如非本人操作，請忽略此簡訊。`;
+  await sendCTMSMS(phoneNumber, message);
+  
+  const responseData = { success: true, message: "Verification code sent." };
+  // For local testing convenience in the Firebase emulator
+  if (process.env.FUNCTIONS_EMULATOR === "true") {
+    responseData.devCode = otpCode;
+  }
+  
+  res.json(responseData);
+});
+
+app.post("/verify-otp", (req, res) => {
+  const { phoneNumber, otpCode } = req.body;
+  if (!phoneNumber || !otpCode) {
+    return res.status(400).json({ error: "Missing required verification details" });
+  }
+  
+  const entry = otpStore[phoneNumber];
+  if (!entry) {
+    return res.status(400).json({ error: "No verification code requested for this number" });
+  }
+  
+  if (Date.now() > entry.expiresAt) {
+    delete otpStore[phoneNumber];
+    return res.status(400).json({ error: "Verification code expired" });
+  }
+  
+  if (entry.code !== otpCode) {
+    return res.status(400).json({ error: "Incorrect verification code" });
+  }
+  
+  // Success: remove code so it can't be reused
+  delete otpStore[phoneNumber];
+  res.json({ success: true, message: "Phone number verified successfully" });
+});
+
 // Reset endpoint
 app.post("/reset", (req, res) => {
   tutors = JSON.parse(JSON.stringify(DEFAULT_TUTORS));

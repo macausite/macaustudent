@@ -471,6 +471,14 @@ async function fillInput(page, selector, text) {
     await fillInput(page, '#commissionInput', '3');
     await fillInput(page, '#announcementInput', '澳門學生網系統升級維護通知');
     
+    console.log("Enabling SMS Verification toggle...");
+    await page.evaluate(() => {
+      const toggle = document.querySelector('#smsVerificationToggle');
+      if (toggle && !toggle.checked) {
+        toggle.click();
+      }
+    });
+
     console.log("Inputting mock google tracking script...");
     const mockScript = '<script>window.testTrackingLoaded = true;</script>';
     await fillInput(page, '#trackingScriptInput', mockScript);
@@ -486,6 +494,125 @@ async function fillInput(page, selector, text) {
     if (testTrackingLoaded !== true) {
       throw new Error("Google Tracking Script was not dynamically injected and executed upon saving settings");
     }
+
+    // ==========================================
+    // STEP 8.5: TEST SMS VERIFICATION REGISTRATION FLOW
+    // ==========================================
+    console.log("\n[Step 8.5] Testing SMS Verification flow...");
+    
+    // Log out Admin
+    const logoutAdminBtnSettings = await page.$('.btn-signout');
+    await logoutAdminBtnSettings.click();
+    await delay(2000);
+
+    // Open Register modal
+    const loginBtnSMS = await findButtonByText(page, "登入 / 註冊");
+    await loginBtnSMS.click();
+    await delay(1000);
+
+    // Toggle to Sign Up mode
+    const signupToggleSMS = await page.$('.auth-toggle-link');
+    await signupToggleSMS.click();
+    await delay(500);
+
+    // Assert that the phone input field is visible
+    const phoneInputVisible = await page.evaluate(() => !!document.querySelector('#authPhoneInput'));
+    console.log(`Phone input visible: ${phoneInputVisible}`);
+    if (!phoneInputVisible) {
+      throw new Error("Phone input was not rendered when SMS Verification was enabled");
+    }
+
+    // Fill registration info
+    const smsEmail = `sms_${timestamp}@example.com`;
+    await fillInput(page, '.auth-form input[placeholder="例如: 蘇老師"]', `SMS驗證學生_${timestamp}`);
+    await fillInput(page, '.auth-form input[type="email"]', smsEmail);
+    await fillInput(page, '.auth-form input[type="password"]', password);
+    await fillInput(page, '#authPhoneInput', '66123456');
+    await delay(500);
+
+    // Click Send OTP
+    console.log("Clicking Send OTP...");
+    const sendOtpBtn = await page.$('#sendOtpBtn');
+    await sendOtpBtn.click();
+    await delay(2000);
+
+    // Retrieve generated code from window context
+    const devOtpCode = await page.evaluate(() => window.devOtpCode);
+    console.log(`Retrieved Dev OTP Code: ${devOtpCode}`);
+    if (!devOtpCode) {
+      throw new Error("Dev OTP Code was not logged to page window context");
+    }
+
+    // Input verification code and click verify
+    await fillInput(page, '#authOtpInput', devOtpCode);
+    const verifyOtpBtn = await page.$('#verifyOtpBtn');
+    await verifyOtpBtn.click();
+    await delay(2000);
+
+    // Check validation message
+    const otpSuccessMessage = await page.evaluate(() => {
+      const divs = Array.from(document.querySelectorAll('.auth-form div'));
+      return divs.some(d => d.textContent.includes('驗證成功'));
+    });
+    console.log(`Verify OTP success message visible: ${otpSuccessMessage}`);
+    if (!otpSuccessMessage) {
+      throw new Error("OTP success message was not displayed after verification");
+    }
+
+    // Click signup button
+    const submitBtnSMS = await page.$('.btn-auth-submit');
+    await submitBtnSMS.click();
+    await delay(5000);
+
+    // Assert login succeeds
+    const isLoggedInSMS = await page.evaluate(() => !!document.querySelector('.btn-signout'));
+    console.log(`Logged in successfully after SMS signup? ${isLoggedInSMS}`);
+    if (!isLoggedInSMS) {
+      throw new Error("Registration with SMS verification failed");
+    }
+
+    // Log out new user
+    const logoutBtnSMS = await page.$('.btn-signout');
+    await logoutBtnSMS.click();
+    await delay(2000);
+
+    // Log back in as Admin to disable SMS verification
+    console.log("Logging back in as Admin to disable SMS verification...");
+    const loginBtnAdminBack = await findButtonByText(page, "登入 / 註冊");
+    await loginBtnAdminBack.click();
+    await delay(1000);
+
+    const guestAdminBtnBack = await findButtonByText(page, "👑 管理員訪客");
+    await guestAdminBtnBack.click();
+    await delay(3500);
+
+    // Disable SMS toggle
+    console.log("Disabling SMS Verification toggle...");
+    await page.evaluate(() => {
+      const toggle = document.querySelector('#smsVerificationToggle');
+      if (toggle && toggle.checked) {
+        toggle.click();
+      }
+    });
+    await delay(500);
+
+    const saveSettingsBtnBack = await findButtonByText(page, "儲存全局設定");
+    await saveSettingsBtnBack.click();
+    await delay(2000);
+
+    // Log out Admin
+    const logoutAdminBtnFinalSMS = await page.$('.btn-signout');
+    await logoutAdminBtnFinalSMS.click();
+    await delay(2000);
+
+    // Log in Admin again (Step 8 expects admin logged in for Tutors tab)
+    console.log("Logging Admin back in for remaining Step 8 CRUD tests...");
+    const loginBtnAdminCRUD = await findButtonByText(page, "登入 / 註冊");
+    await loginBtnAdminCRUD.click();
+    await delay(1000);
+    const guestAdminBtnCRUD = await findButtonByText(page, "👑 管理員訪客");
+    await guestAdminBtnCRUD.click();
+    await delay(3500);
 
     // Navigate to Tutors tab
     await page.evaluate(() => {
